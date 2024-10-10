@@ -51,13 +51,15 @@ class DishesController {
     }
   
     // Atualiza as informações do prato se fornecidas, ou mantém as antigas
-    dish.title = title ?? dish.title;
-    dish.description = description ?? dish.description;
-    dish.category = category ?? dish.category;
-    dish.price = price ?? dish.price;
+   const dishUpdate = {
+    title: title ?? dish.title,
+    description: description ?? dish.description,
+    category: category ?? dish.category,
+    price: price ?? dish.price,
   
+   }
     // Atualizando as informações do prato pelo id
-    await knex("dishes").where({ id }).update(dish);
+    await knex("dishes").where({ id }).update(dishUpdate);
   
     // Verifica e insere os ingredientes
     const hasOnlyOneIngredient = typeof(ingredients) === "string";
