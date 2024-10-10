@@ -3,8 +3,8 @@ const AppError = require("../utils/AppError.js");
 
 class DishesController {
   async create(request, response) {
-    const { title, description, category, price, ingredients } = request.body;
-    
+    const { title, description, category, price, ingredients } = request.body
+
     // Verifica se o prato já existe
     const checkDishExists = await knex("dishes").where({ title }).first();
     
@@ -106,6 +106,48 @@ class DishesController {
 
     return response.json({ message: "Prato deletado com sucesso!" });
   }
+  async index(request, response) {
+    // Capturing Query Parameters
+    const { title, ingredients } = request.query;
+
+    // Listing Dishes and Ingredients at the same time (innerJoin)
+    let dishes;
+
+    if (ingredients) {
+        const filterIngredients = ingredients.split(',').map(ingredient => ingredient.trim());
+        
+        dishes = await knex("ingredients")
+            .select([
+                "dishes.id",
+                "dishes.title",
+                "dishes.description",
+                "dishes.category",
+                "dishes.price",
+                "dishes.image",
+            ])
+            .whereLike("dishes.title", `%${title}%`)
+            .whereIn("name", filterIngredients)
+            .innerJoin("dishes", "dishes.id", "ingredients.dish_id")
+            .groupBy("dishes.id")
+            .orderBy("dishes.title")
+    } else {
+        dishes = await knex("dishes")
+            .whereLike("title", `%${title}%`)
+            .orderBy("title");
+    }
+        
+    const dishesIngredients = await knex("ingredients") 
+    const dishesWithIngredients = dishes.map(dish => {
+        const dishIngredient = dishesIngredients.filter(ingredient => ingredient.dish_id === dish.id);
+
+        return {
+            ...dish,
+            ingredients: dishIngredient
+        }
+    })
+    
+    return response.status(200).json(dishesWithIngredients);
+}  
 }
 
 module.exports = DishesController;
