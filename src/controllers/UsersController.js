@@ -2,6 +2,7 @@ const AppError = require("../utils/AppError.js")
 const sqliteConnection = require("../database/sqlite")
 const UserRepository = require("../repositories/UserRepository.js")
 const UserCreateService = require("../services/UserCreteService.js")
+const knex = require("knex")
 
 class UsersController {
  async create(request, response) {
