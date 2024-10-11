@@ -41,7 +41,7 @@ class DishesController {
   async update(request, response) {
     const { title, description, category, price, ingredients, image } = request.body;
     const { id } = request.params // id do prato que estamos atualizando
-  
+
     // Busca o prato no banco de dados
     const dish = await knex("dishes").where({ id }).first();
   
@@ -56,7 +56,6 @@ class DishesController {
     description: description ?? dish.description,
     category: category ?? dish.category,
     price: price ?? dish.price,
-  
    }
     // Atualizando as informações do prato pelo id
     await knex("dishes").where({ id }).update(dishUpdate);
