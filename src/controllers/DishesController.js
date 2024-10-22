@@ -107,48 +107,61 @@ class DishesController {
 
     return response.json({ message: "Prato deletado com sucesso!" });
   }
+  
   async index(request, response) {
-    // Capturing Query Parameters
+    // Capturando os parâmetros de consulta
     const { title, ingredients } = request.query;
 
-    // Listing Dishes and Ingredients at the same time (innerJoin)
     let dishes;
 
-    if (ingredients) {
-        const filterIngredients = ingredients.split(',').map(ingredient => ingredient.trim());
-        
-        dishes = await knex("ingredients")
-            .select([
-                "dishes.id",
-                "dishes.title",
-                "dishes.description",
-                "dishes.category",
-                "dishes.price",
-                "dishes.image",
-            ])
-            .whereLike("dishes.title", `%${title}%`)
-            .whereIn("name", filterIngredients)
-            .innerJoin("dishes", "dishes.id", "ingredients.dish_id")
-            .groupBy("dishes.id")
-            .orderBy("dishes.title")
-    } else {
-        dishes = await knex("dishes")
-            .whereLike("title", `%${title}%`)
-            .orderBy("title");
-    }
-        
-    const dishesIngredients = await knex("ingredients") 
-    const dishesWithIngredients = dishes.map(dish => {
-        const dishIngredient = dishesIngredients.filter(ingredient => ingredient.dish_id === dish.id);
-
-        return {
-            ...dish,
-            ingredients: dishIngredient
+    try {
+        if (ingredients) {
+            const filterIngredients = ingredients.split(',').map(ingredient => ingredient.trim());
+            
+            dishes = await knex("ingredients")
+                .select([
+                    "dishes.id",
+                    "dishes.title",
+                    "dishes.description",
+                    "dishes.category",
+                    "dishes.price",
+                    "dishes.image",
+                ])
+                .whereLike("dishes.title", `%${title || ''}%`) // Adicionando '' como fallback
+                .whereIn("name", filterIngredients)
+                .innerJoin("dishes", "dishes.id", "ingredients.dish_id")
+                .groupBy("dishes.id")
+                .orderBy("dishes.title");
+        } else {
+            dishes = await knex("dishes")
+                .whereLike("title", `%${title || ''}%`) // Adicionando '' como fallback
+                .orderBy("title");
         }
-    })
-    
-    return response.status(200).json(dishesWithIngredients);
-}  
+
+        console.log("Dishes found:", dishes); // Log para verificar os pratos encontrados
+
+        // Verificando se pratos foram encontrados
+        if (dishes.length === 0) {
+            return response.status(404).json({ message: "Nenhum prato encontrado." });
+        }
+
+        const dishesIngredients = await knex("ingredients");
+
+        const dishesWithIngredients = dishes.map(dish => {
+            const dishIngredient = dishesIngredients.filter(ingredient => ingredient.dish_id === dish.id);
+            return {
+                ...dish,
+                ingredients: dishIngredient
+            };
+        });
+
+        return response.status(200).json(dishesWithIngredients);
+    } catch (error) {
+        console.error("Error fetching dishes:", error); // Log do erro
+        return response.status(500).json({ message: "Erro ao buscar pratos." });
+    }
+}
+
 }
 
 module.exports = DishesController;
