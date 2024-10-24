@@ -3,7 +3,11 @@ const AppError = require("../utils/AppError.js");
 
 class FavoritesController {
  async create( request, response ) {
-  const { user_id, dish_id } = request.body
+  const { dish_id } = request.body
+  const user_id = request.user.id
+  
+  console.log("user_id:", user_id);
+  console.log("dish_id:", dish_id);
 
   //Verificando se o prato existe
   const checkDishExists = await knex('dishes')
