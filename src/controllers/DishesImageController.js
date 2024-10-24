@@ -25,6 +25,12 @@ class DishesImageController {
 
  return response.json(dish)
  }
+ async show(request, response) {
+  const { image } = request.params;
+  const diskStorage = new DiskStorage();
+  const imagePath = path.resolve(uploadConfig.UPLOADS_FOLDER, image);
+  await diskStorage.sendFile(response, imagePath);
+}
 }
 
 module.exports = DishesImageController

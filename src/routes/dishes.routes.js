@@ -18,5 +18,6 @@ dishesRoutes.get("/:id", dishesController.show)
 dishesRoutes.delete("/:id", dishesController.delete)
 dishesRoutes.put("/:id", ensureAuthenticated ,dishesController.update)
 dishesRoutes.patch("/avatar/:id", ensureAuthenticated, upload.single("avatar"), dishesImageController.update)
+dishesRoutes.get('/images/:image', dishesImageController.show);
 
 module.exports = dishesRoutes

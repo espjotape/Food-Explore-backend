@@ -15,7 +15,7 @@ class DiskStorage {
   )
   return file
  }
- // Função para deletar o arquivo. 
+ 
  async deleteFile(file){
   const filePath = path.resolve(uploadConfig.UPLOADS_FOLDER, file)
   try{
@@ -27,6 +27,16 @@ class DiskStorage {
   // função "unlink" remove o arquivo.
   await fs.promises.unlink(filePath)
  }
+
+ async sendFile(response, filePath) {
+  try {
+    const fileBuffer = await fs.promises.readFile(filePath);
+    response.setHeader('Content-Type', 'image/jpeg');
+    response.send(fileBuffer);
+  } catch (err) {
+    response.status(404).send({ message: 'Imagem não encontrada' });
+  }
+}
 }
 
 module.exports = DiskStorage
