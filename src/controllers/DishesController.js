@@ -1,9 +1,15 @@
 const knex = require("../database/knex");
 const AppError = require("../utils/AppError.js");
+const DiskStorage = require("../providers/DiskStorage.js")
 
 class DishesController {
   async create(request, response) {
     const { title, description, category, price, ingredients } = request.body
+    const image = request.file.filename;
+    
+    const diskStorage = new DiskStorage();
+    const filename = await diskStorage.saveFile(image);
+
 
     // Verifica se o prato já existe
     const checkDishExists = await knex("dishes").where({ title }).first();
@@ -21,6 +27,7 @@ class DishesController {
       description,
       price,
       category,
+      image: filename,
     });
 
     // Mapeia os ingredientes para serem inseridos com o dish_id
