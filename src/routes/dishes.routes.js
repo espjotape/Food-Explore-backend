@@ -12,7 +12,6 @@ const dishesImageController = new DishesImageController();
 const dishesRoutes = Router();
 const upload = multer(uploadConfig.MULTER);
 
-// Rotas
 dishesRoutes.get("/", dishesController.index);
 dishesRoutes.post("/", upload.single("image"), dishesController.create); // Adicione o middleware de upload aqui
 dishesRoutes.get("/:id", dishesController.show);

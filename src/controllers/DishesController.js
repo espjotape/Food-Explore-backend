@@ -47,53 +47,62 @@ class DishesController {
 
   async update(request, response) {
     const { title, description, category, price, ingredients, image } = request.body;
-    const { id } = request.params // id do prato que estamos atualizando
+    const { id } = request.params; // ID do prato que estamos atualizando
 
-    // Busca o prato no banco de dados
-    const dish = await knex("dishes").where({ id }).first();
+   try {
+     // Busca o prato no banco de dados
+     const dish = await knex("dishes").where({ id }).first();
   
-    // Se o prato não for encontrado, retorne um erro
-    if (!dish) {
-      throw new AppError("Prato não encontrado.", 404);
-    }
-  
-    // Atualiza as informações do prato se fornecidas, ou mantém as antigas
-   const dishUpdate = {
-    title: title ?? dish.title,
-    description: description ?? dish.description,
-    category: category ?? dish.category,
-    price: price ?? dish.price,
-   }
-    // Atualizando as informações do prato pelo id
-    await knex("dishes").where({ id }).update(dishUpdate);
-  
-    // Verifica e insere os ingredientes
-    const hasOnlyOneIngredient = typeof(ingredients) === "string";
-    let ingredientsInsert;
-  
-    if (hasOnlyOneIngredient) {
-      ingredientsInsert = [{
-        name: ingredients,
-        dish_id: dish.id
-      }];
-    } else if (Array.isArray(ingredients) && ingredients.length > 0) {
-      ingredientsInsert = ingredients.map(ingredient => {
-        return {
-          dish_id: dish.id,
-          name: ingredient
-        };
-      });
-    }
-  
-    // Remove os ingredientes antigos e insere os novos
-    if (ingredientsInsert) {
-      await knex("ingredients").where({ dish_id: id }).delete();
-      await knex("ingredients").insert(ingredientsInsert);
-    }
-  
-    return response.status(201).json('Prato atualizado com sucesso');
-  }
-  
+     // Se o prato não for encontrado, retorne um erro
+     if (!dish) {
+         throw new AppError("Prato não encontrado.", 404);
+     }
+   
+     // Atualiza as informações do prato se fornecidas, ou mantém as antigas
+     const dishUpdate = {
+         title: title ?? dish.title,
+         description: description ?? dish.description,
+         category: category ?? dish.category,
+         price: price ?? dish.price,
+     };
+     
+     // Atualizando as informações do prato pelo id
+     await knex("dishes").where({ id }).update(dishUpdate);
+   
+     // Verifica e insere os ingredientes
+     const hasOnlyOneIngredient = typeof(ingredients) === "string";
+     let ingredientsInsert;
+   
+     if (hasOnlyOneIngredient) {
+         ingredientsInsert = [{
+             name: ingredients,
+             dish_id: dish.id
+         }];
+     } else if (Array.isArray(ingredients) && ingredients.length > 0) {
+         ingredientsInsert = ingredients.map(ingredient => {
+             return {
+                 dish_id: dish.id,
+                 name: ingredient
+             };
+         });
+     }
+   
+     // Remove os ingredientes antigos e insere os novos
+     if (ingredientsInsert) {
+         await knex("ingredients").where({ dish_id: id }).delete();
+         await knex("ingredients").insert(ingredientsInsert);
+     }
+   
+     // Busca e retorna o prato atualizado
+     const updatedDish = await knex("dishes").where({ id }).first();
+     return response.status(200).json(updatedDish);
+   } catch (error) {
+    console.error(error);
+    return response.status(500).json({ message: "Erro ao atualizar o prato." });
+  }
+}
+
+
   
   async show(request, response){
     const { id } = request.params
