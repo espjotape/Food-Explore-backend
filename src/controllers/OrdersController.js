@@ -20,6 +20,7 @@ class OrdersController {
           itemsInsert.push({
             title: dish.title,
             quantity: item.quantity,
+            price: dish.price, 
             dish_id: item.id,
             order_id,
           });
@@ -39,68 +40,68 @@ class OrdersController {
     }
   }
 
+  async index(request, response) {
+    const user_id = request.user.id;
+
+    try {
+      const user = await knex("users").where({ id: user_id }).first();
+      const ordersQuery = knex("ordersItems")
+          .innerJoin("orders", "orders.id", "ordersItems.order_id")
+          .innerJoin("dishes", "dishes.id", "ordersItems.dish_id")
+          .select([
+              "orders.id",
+              "orders.user_id",
+              "orders.orderStatus",
+              "orders.totalPrice",
+              "orders.created_at",
+              "dishes.image", 
+              "ordersItems.price",
+              "ordersItems.quantity",
+              "ordersItems.title"
+          ])
+          .groupBy("orders.id", "ordersItems.id");
+
+      const orders = user.isAdmin
+          ? await ordersQuery
+          : await ordersQuery.where({ user_id });
+
+      const ordersItems = await knex("ordersItems");
+      const ordersWithItems = orders.map(order => ({
+          ...order,
+          items: ordersItems.filter(item => item.order_id === order.id)
+      }));
+
+      return response.status(200).json(ordersWithItems);
+    } catch (error) {
+      console.error("Erro ao listar os pedidos:", error);
+      return response.status(500).json({ error: "Erro ao listar os pedidos." });
+    }
+  }
+
   async delete(request, response) {
     const { id } = request.params;
 
     try {
-        // Remove todos os itens do pedido
         await knex("ordersItems").where({ order_id: id }).del();
-        // Remove o pedido
         await knex("orders").where({ id }).del();
 
-        return response.status(204).send(); // No content
+        return response.status(204).send();
     } catch (error) {
         console.error("Erro ao remover pedido:", error);
         return response.status(500).json({ error: "Erro ao remover o pedido." });
     }
-}
-
-
-  async index(request, response) {
-        const user_id = request.user.id;
-
-        try {
-            const user = await knex("users").where({ id: user_id }).first();
-            const ordersQuery = knex("ordersItems")
-                .innerJoin("orders", "orders.id", "ordersItems.order_id")
-                .innerJoin("dishes", "dishes.id", "ordersItems.dish_id") // Adicionando a junção para obter a imagem
-                .select([
-                    "orders.id",
-                    "orders.user_id",
-                    "orders.orderStatus",
-                    "orders.totalPrice",
-                    "orders.created_at",
-                    "dishes.image" // Selecionando a imagem do prato
-                ])
-                .groupBy("orders.id");
-
-            const orders = user.isAdmin
-                ? await ordersQuery
-                : await ordersQuery.where({ user_id });
-
-            const ordersItems = await knex("ordersItems");
-            const ordersWithItems = orders.map(order => ({
-                ...order,
-                items: ordersItems.filter(item => item.order_id === order.id)
-            }));
-
-            return response.status(200).json(ordersWithItems);
-        } catch (error) {
-            console.error("Erro ao listar os pedidos:", error);
-            return response.status(500).json({ error: "Erro ao listar os pedidos." });
-        }
   }
 
   async update(request, response) {
-        const { id, orderStatus } = request.body;
+    const { id, orderStatus } = request.body;
 
-        try {
-            await knex("orders").update({ orderStatus }).where({ id });
-            return response.status(204).send();
-        } catch (error) {
-            console.error("Erro ao atualizar o pedido:", error);
-            return response.status(500).json({ error: "Erro ao atualizar o pedido." });
-        }
+    try {
+        await knex("orders").update({ orderStatus }).where({ id });
+        return response.status(204).send();
+    } catch (error) {
+        console.error("Erro ao atualizar o pedido:", error);
+        return response.status(500).json({ error: "Erro ao atualizar o pedido." });
+    }
   }
 }
 

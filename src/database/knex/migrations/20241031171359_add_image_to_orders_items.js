@@ -5,6 +5,7 @@ exports.up = knex => knex.schema.createTable("ordersItems", table => {
 
  table.text("title"); 
  table.integer("quantity"); 
+ table.float("price")
 
  table.timestamp("created_at").default(knex.fn.now()); 
 });
