@@ -1,46 +1,62 @@
 const knex = require("../database/knex");
 
 class OrdersController {
-    async create(request, response) {
-        const { cart, orderStatus, totalPrice } = request.body; // Removido paymentMethod
-        const user_id = request.user.id;
+  async create(request, response) {
+    console.log(request.body);
+    const { cart, orderStatus, totalPrice } = request.body;
+    const user_id = request.user.id; 
 
-        try {
-            // Insira o pedido na tabela orders
-            const [order_id] = await knex("orders").insert({
-                orderStatus,
-                totalPrice,
-                user_id 
-            });
+    try {
+      const [order_id] = await knex("orders").insert({ 
+        orderStatus, 
+        totalPrice, 
+        user_id 
+      });
 
-            // Prepare os itens para serem inseridos na tabela ordersItems
-            const itemsInsert = [];
-
-            for (const item of cart) {
-                // Busque a imagem do prato pela ID
-                const dish = await knex("dishes").where({ id: item.id }).first();
-                if (dish) {
-                    itemsInsert.push({
-                        title: dish.title, // Use o título do prato
-                        quantity: item.quantity,
-                        dish_id: dish.id,
-                        order_id,
-                        // Remover a linha da imagem, pois não existe na tabela
-                        // image: dish.image // Removido porque a tabela não tem essa coluna
-                    });
-                }
-            }
-
-            // Insira os itens na tabela ordersItems
-            await knex("ordersItems").insert(itemsInsert);
-            return response.status(201).json({ order_id });
-        } catch (error) {
-            console.error("Erro ao criar o pedido:", error);
-            return response.status(500).json({ error: "Erro ao criar o pedido." });
+      const itemsInsert = [];
+      for (const item of cart) {
+        const dish = await knex("dishes").where({ id: item.id }).first();
+        if (dish) {
+          itemsInsert.push({
+            title: dish.title,
+            quantity: item.quantity,
+            dish_id: item.id,
+            order_id,
+          });
         }
-    }
+      }
 
-    async index(request, response) {
+      console.log(itemsInsert);
+
+      if (itemsInsert.length > 0) {
+        await knex("ordersItems").insert(itemsInsert);
+      }
+
+      return response.status(201).json({ order_id });
+    } catch (error) {
+      console.error("Erro ao criar o pedido:", error);
+      return response.status(500).json({ error: "Erro ao criar o pedido." });
+    }
+  }
+
+  async delete(request, response) {
+    const { id } = request.params;
+
+    try {
+        // Remove todos os itens do pedido
+        await knex("ordersItems").where({ order_id: id }).del();
+        // Remove o pedido
+        await knex("orders").where({ id }).del();
+
+        return response.status(204).send(); // No content
+    } catch (error) {
+        console.error("Erro ao remover pedido:", error);
+        return response.status(500).json({ error: "Erro ao remover o pedido." });
+    }
+}
+
+
+  async index(request, response) {
         const user_id = request.user.id;
 
         try {
@@ -73,9 +89,9 @@ class OrdersController {
             console.error("Erro ao listar os pedidos:", error);
             return response.status(500).json({ error: "Erro ao listar os pedidos." });
         }
-    }
+  }
 
-    async update(request, response) {
+  async update(request, response) {
         const { id, orderStatus } = request.body;
 
         try {
@@ -85,7 +101,7 @@ class OrdersController {
             console.error("Erro ao atualizar o pedido:", error);
             return response.status(500).json({ error: "Erro ao atualizar o pedido." });
         }
-    }
+  }
 }
 
 module.exports = OrdersController;

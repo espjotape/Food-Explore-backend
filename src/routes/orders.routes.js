@@ -11,8 +11,9 @@ const ordersRoutes = Router();
 
 ordersRoutes.use(ensureAuthenticated);
 
-ordersRoutes.post("/", ordersController.create); 
+ordersRoutes.post("/", ordersController.create);
 ordersRoutes.get("/", ordersController.index); 
 ordersRoutes.put("/", ordersController.update); 
+ordersRoutes.delete("/:id", ordersController.delete) 
 
 module.exports = ordersRoutes;
