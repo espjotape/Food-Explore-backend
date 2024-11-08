@@ -2,44 +2,36 @@ const knex = require("../database/knex");
 
 class OrdersController {
   async create(request, response) {
-    console.log(request.body);
-    const { cart, orderStatus, totalPrice } = request.body;
-    const user_id = request.user.id; 
-
+    const { cart } = request.body;
+    const user_id = request.user.id;
+  
     try {
-      const [order_id] = await knex("orders").insert({ 
-        orderStatus, 
-        totalPrice, 
-        user_id 
+      // Insere o pedido na tabela 'orders' e retorna o 'order_id' gerado
+      const [order_id] = await knex("orders").insert({
+        orderStatus: "pending",
+        totalPrice: cart[0].price * cart[0].quantity,
+        user_id,
       });
-
-      const itemsInsert = [];
-      for (const item of cart) {
-        const dish = await knex("dishes").where({ id: item.id }).first();
-        if (dish) {
-          itemsInsert.push({
-            title: dish.title,
-            quantity: item.quantity,
-            price: dish.price, 
-            dish_id: item.id,
-            order_id,
-          });
-        }
-      }
-
-      console.log(itemsInsert);
-
-      if (itemsInsert.length > 0) {
-        await knex("ordersItems").insert(itemsInsert);
-      }
-
+  
+      // Define o objeto para inserir na tabela 'ordersItems'
+      const itemsInsert = {
+        title: cart[0].title,
+        quantity: cart[0].quantity,
+        price: cart[0].price,
+        dish_id: cart[0].dish_id, // Certifique-se de usar 'dish_id' aqui
+        order_id,
+      };
+  
+      // Insere os itens do pedido na tabela 'ordersItems'
+      await knex("ordersItems").insert(itemsInsert);
+  
       return response.status(201).json({ order_id });
     } catch (error) {
       console.error("Erro ao criar o pedido:", error);
       return response.status(500).json({ error: "Erro ao criar o pedido." });
     }
   }
-
+  
   async index(request, response) {
     const user_id = request.user.id;
 
